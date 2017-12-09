@@ -293,6 +293,7 @@ class InstagramCrawler(object):
                     # caption['datetime_title'] = date_title
                 except TimeoutException:
                     print("PARSE: Time exception in {}. Trying again".format(post_num+1))
+                    wait_parse += 0.1
                 except NoSuchElementException:  # Forbidden
                     print("PARSE: Caption not found in the {} photo. Skip this post.".format(post_num+1))
                     caption = ""
