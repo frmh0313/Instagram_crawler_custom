@@ -300,9 +300,9 @@ class InstagramCrawler(object):
             self.data['captions'].extend(captions)
             count = post_num + 1
             if count % num_captions_in_file == 0:
-                last_file_ends = count
-                filename = str(count)
+                filename = str(count) +'.txt'
                 filepath = os.path.join(dir_path, filename)
+                print('file {}'.format(filename), 'writing')
 
                 caption_result = []
                 for caption in self.data['captions']:
