@@ -265,6 +265,9 @@ class InstagramCrawler(object):
                         print("Trying again")
                         wait += 0.1
                         continue
+                    except NoSuchElementException as e:
+                        print(e)
+                        print("Try again")
                     else:
                         trying = False
                         wait = 0
