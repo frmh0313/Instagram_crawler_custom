@@ -210,10 +210,10 @@ class InstagramCrawler(object):
 
     def click_and_scrape_captions(self, number, query, dir_prefix):
         print("Scraping captions...")
-        num_captions_in_file = 100
+        num_captions_in_file = 1000
 
         dir_name = query.lstrip(
-            '##') + '.hashtag' if query.startswith('#') else query
+            '#') + '.hashtag' if query.startswith('#') else query
 
         dir_path = os.path.join(dir_prefix, dir_name)
         if not os.path.exists(dir_path):
