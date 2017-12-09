@@ -225,7 +225,7 @@ class InstagramCrawler(object):
         for post_num in range(number):
             captions = []
             sys.stdout.write("\033[F")
-            print("Scraping captions {} / {}".format(post_num+1,number))
+            print("0:Scraping captions {} / {}".format(post_num+1,number))
             if post_num == 0:  # Click on the first post
                 # Chrome
                 #self._driver.find_element_by_class_name('_ovg3g').click()
@@ -243,7 +243,7 @@ class InstagramCrawler(object):
                                 )
                             )
                         except TimeoutException:
-                            print("Timeout in post_num 0. Trying again")
+                            print("1:Timeout in post_num 0. Trying again.")
                             wait_1 += 0.1
                             continue
                         else:
@@ -261,13 +261,12 @@ class InstagramCrawler(object):
                         WebDriverWait(self._driver, wait_2).until(
                             url_change(url_before))
                     except TimeoutException:
-                        print("Time out in caption scraping at number {}".format(post_num))
-                        print("Trying again")
+                        print("2:Time out in caption scraping at number {}. Trying again.".format(post_num+1))
                         wait_2 += 0.1
                         continue
                     except NoSuchElementException as e:
                         print(e)
-                        print("Try again")
+                        print("2:NoSuchElementException in {}. Trying again.".format(post_num+1))
                     else:
                         trying_2 = False
                         wait_2 = 0
@@ -293,13 +292,14 @@ class InstagramCrawler(object):
                     # caption['datetime'] = datetime
                     # caption['datetime_title'] = date_title
                 except TimeoutException:
-                    print("Time exception. Trying again")
+                    print("PARSE: Time exception in {}. Trying again".format(post_num+1))
+                    wait_parse += 0.1
                 except NoSuchElementException:  # Forbidden
-                    print("Caption not found in the {} photo".format(post_num))
+                    print("PARSE: Caption not found in the {} photo. Skip this post.".format(post_num+1))
                     caption = ""
                     break
                 except StaleElementReferenceException:
-                    print("StaleElement. Try to refresh")
+                    print("PARSE: StaleElementReferenceException in {}. Trying to refresh".format(post_num+1))
                     wait_stale = 0
                     trying_stale = True
                     while trying_stale:
@@ -310,8 +310,7 @@ class InstagramCrawler(object):
                             WebDriverWait(self._driver, wait_stale).until(
                                 url_change(url_before))
                         except TimeoutException:
-                            print("Time out in caption scraping at number {}".format(post_num))
-                            print("Trying again")
+                            print("PARSE:STALE:Trying again")
                             #wait += 0.1
                             wait_stale += 0.1
                             continue
