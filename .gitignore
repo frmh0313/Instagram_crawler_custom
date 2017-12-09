@@ -7,3 +7,6 @@ auth.json
 # driver logs
 geckodriver.log
 ghostdriver.log
+
+
+.idea/workspace.xml
