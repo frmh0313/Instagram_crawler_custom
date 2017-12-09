@@ -129,13 +129,14 @@ class InstagramCrawler(object):
             # Browse target page
             self.browse_target_page(query)
             # Scroll down until target number photos is reached
-            num_of_posts = self.scroll_to_num_of_posts(number)
+            #num_of_posts = self.scroll_to_num_of_posts(number)
+            num_of_posts = self.num_of_posts()
             # Scrape photo links
             # self.scrape_photo_links(number, is_hashtag=query.startswith("#")) # Do not download image
             # Scrape captions if specified
             if caption is True:
                 # self.click_and_scrape_captions(number, query, dir_prefix)
-                self.click_and_scrape_captions(num_of_posts)
+                self.click_and_scrape_captions(num_of_posts, query, dir_prefix)
 
         elif crawl_type in ["followers", "following"]:
             # Need to login first before crawling followers/following
@@ -154,7 +155,7 @@ class InstagramCrawler(object):
             return
         # Save to directory
         print("Saving...")
-        self.download_and_save(dir_prefix, query, crawl_type)
+        # self.download_and_save(dir_prefix, query, crawl_type)
 
         # Quit driver
         print("Quitting driver...")
@@ -171,11 +172,13 @@ class InstagramCrawler(object):
 
         self._driver.get(target_url)
 
-    def scroll_to_num_of_posts(self, number):
-        # Get total number of posts of page
+    def num_of_posts(self):
         num_info = re.search(r'\], "count": \d+',
                              self._driver.page_source).group()
         num_of_posts = int(re.findall(r'\d+', num_info)[0])
+        return num_of_posts
+
+    def scroll_to_num_of_posts(self, number, num_of_posts):
         print("posts: {}, number: {}".format(num_of_posts, number))
         number = number if number < num_of_posts else num_of_posts
 
