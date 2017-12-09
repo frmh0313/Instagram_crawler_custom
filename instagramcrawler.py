@@ -21,7 +21,7 @@ from selenium import webdriver
 from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
-from selenium.common.exceptions import NoSuchElementException, TimeoutException
+from selenium.common.exceptions import NoSuchElementException, TimeoutException, StaleElementReferenceException
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
@@ -296,6 +296,23 @@ class InstagramCrawler(object):
                     caption = ""
                     wait += 0.1
                     break
+                except StaleElementReferenceException:
+                    print("StaleElement. Try to refresh")
+                    while trying:
+                        try:
+                            url_before = self._driver.current_url
+                            self._driver.find_element_by_css_selector(
+                                CSS_RIGHT_ARROW).click()
+                            WebDriverWait(self._driver, wait).until(
+                                url_change(url_before))
+                        except TimeoutException:
+                            print("Time out in caption scraping at number {}".format(post_num))
+                            print("Trying again")
+                            wait += 0.1
+                            continue
+                        else:
+                            trying = False
+                            wait = 0
                 else:
                     trying = False
                     wait = 0
@@ -317,6 +334,20 @@ class InstagramCrawler(object):
                     with codecs.open(filepath, 'w', encoding='utf8') as fout:
                         json.dump(json_object, fout, ensure_ascii=False)
                 self.data['captions'] = []
+            if count == number:
+                filename = str(count) + '.txt'
+                filepath = os.path.join(dir_path, filename)
+                print('file {}'.format(filename), 'writing')
+
+                caption_result = []
+                for caption in self.data['captions']:
+                    caption_result.append({'count': caption['count'],
+                                           'caption': caption['caption'],
+                                           'datetime': caption['datetime'],
+                                           'datetime_title': caption['datetime_title']})
+                    json_object = json.dumps(caption_result, ensure_ascii=False, indent=4)
+                    with codecs.open(filepath, 'w', encoding='utf8') as fout:
+                        json.dump(json_object, fout, ensure_ascii=False)
             # captions.append(datetime)
             # captions.append(date_title)
 
