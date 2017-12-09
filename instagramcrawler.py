@@ -134,7 +134,7 @@ class InstagramCrawler(object):
             # self.scrape_photo_links(number, is_hashtag=query.startswith("#")) # Do not download image
             # Scrape captions if specified
             if caption is True:
-                self.click_and_scrape_captions(number)
+                self.click_and_scrape_captions(number, query, dir_prefix)
                 # self.click_and_scrape_captions(num_of_posts)
 
         elif crawl_type in ["followers", "following"]:
@@ -208,12 +208,19 @@ class InstagramCrawler(object):
 
         self.data['photo_links'] = photo_links[begin:number + begin]
 
-    def click_and_scrape_captions(self, number):
+    def click_and_scrape_captions(self, number, query, dir_prefix):
         print("Scraping captions...")
-        captions = []
+        num_captions_in_file = 100
 
-        last_file_ends = 0
+        dir_name = query.lstrip(
+            '##') + '.hashtag' if query.startswith('#') else query
+
+        dir_path = os.path.join(dir_prefix, dir_name)
+        if not os.path.exists(dir_path):
+            os.makedirs(dir_path)
+
         for post_num in range(number):
+            captions = []
             sys.stdout.write("\033[F")
             print("Scraping captions {} / {}".format(post_num+1,number))
             if post_num == 0:  # Click on the first post
@@ -273,7 +280,7 @@ class InstagramCrawler(object):
                     date_title = time_element.get_attribute('title')
                     caption = time_element.find_element_by_xpath(
                         TIME_TO_CAPTION_PATH).text
-                    caption_date = { 'count': post_num, 'caption':caption, 'datetime': datetime, 'datetime_title':date_title }
+                    caption_date = { 'count': post_num+1, 'caption':caption, 'datetime': datetime, 'datetime_title':date_title }
                     # caption = {}
                     # caption['text'] = time_element.find_element_by_xpath(
                     #     TIME_TO_CAPTION_PATH).text
@@ -290,7 +297,23 @@ class InstagramCrawler(object):
                     trying = False
                     wait = 0
             captions.append(caption_date)
-        self.data['captions'].extend(captions)
+            self.data['captions'].extend(captions)
+            count = post_num + 1
+            if count % num_captions_in_file == 0:
+                last_file_ends = count
+                filename = str(count)
+                filepath = os.path.join(dir_path, filename)
+
+                caption_result = []
+                for caption in self.data['captions']:
+                    caption_result.append({'count': caption['count'],
+                                           'caption': caption['caption'],
+                                           'datetime': caption['datetime'],
+                                           'datetime_title': caption['datetime_title']})
+                    json_object = json.dumps(caption_result, ensure_ascii=False, indent=4)
+                    with codecs.open(filepath, 'w', encoding='utf8') as fout:
+                        json.dump(json_object, fout, ensure_ascii=False)
+                self.data['captions'] = []
             # captions.append(datetime)
             # captions.append(date_title)
 
