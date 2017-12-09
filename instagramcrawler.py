@@ -233,53 +233,53 @@ class InstagramCrawler(object):
                     FIREFOX_FIRST_POST_PATH).click()
 
                 if number != 1:  #
-                    trying = True
-                    wait = 0
-                    while trying:
+                    trying_1 = True
+                    wait_1 = 0
+                    while trying_1:
                         try:
-                            WebDriverWait(self._driver, wait).until(
+                            WebDriverWait(self._driver, wait_1).until(
                                 EC.presence_of_element_located(
                                     (By.CSS_SELECTOR, CSS_RIGHT_ARROW)
                                 )
                             )
                         except TimeoutException:
                             print("Timeout in post_num 0. Trying again")
-                            wait += 0.1
+                            wait_1 += 0.1
                             continue
                         else:
-                            trying = False
-                            wait = 0
+                            trying_1 = False
+                            wait_1 = 0
 
             elif number != 1:  # Click Right Arrow to move to next post
-                trying = True
-                wait = 0
-                while trying:
+                trying_2 = True
+                wait_2 = 0
+                while trying_2:
                     try:
                         url_before = self._driver.current_url
                         self._driver.find_element_by_css_selector(
                             CSS_RIGHT_ARROW).click()
-                        WebDriverWait(self._driver, wait).until(
+                        WebDriverWait(self._driver, wait_2).until(
                             url_change(url_before))
                     except TimeoutException:
                         print("Time out in caption scraping at number {}".format(post_num))
                         print("Trying again")
-                        wait += 0.1
+                        wait_2 += 0.1
                         continue
                     except NoSuchElementException as e:
                         print(e)
                         print("Try again")
                     else:
-                        trying = False
-                        wait = 0
+                        trying_2 = False
+                        wait_2 = 0
 
 
             # Parse caption
             # + Parse date
-            trying = True
-            wait = 0
-            while trying:
+            trying_parse = True
+            wait_parse = 0
+            while trying_parse:
                 try:
-                    time_element = WebDriverWait(self._driver, wait).until(
+                    time_element = WebDriverWait(self._driver, wait_parse).until(
                         EC.presence_of_element_located((By.TAG_NAME, "time"))
                     )
                     datetime = time_element.get_attribute('datetime')
@@ -297,28 +297,30 @@ class InstagramCrawler(object):
                 except NoSuchElementException:  # Forbidden
                     print("Caption not found in the {} photo".format(post_num))
                     caption = ""
-                    wait += 0.1
                     break
                 except StaleElementReferenceException:
                     print("StaleElement. Try to refresh")
-                    while trying:
+                    wait_stale = 0
+                    trying_stale = True
+                    while trying_stale:
                         try:
                             url_before = self._driver.current_url
                             self._driver.find_element_by_css_selector(
                                 CSS_RIGHT_ARROW).click()
-                            WebDriverWait(self._driver, wait).until(
+                            WebDriverWait(self._driver, wait_stale).until(
                                 url_change(url_before))
                         except TimeoutException:
                             print("Time out in caption scraping at number {}".format(post_num))
                             print("Trying again")
-                            wait += 0.1
+                            #wait += 0.1
+                            wait_stale += 0.1
                             continue
                         else:
-                            trying = False
-                            wait = 0
+                            trying_stale = False
+                            wait_stale = 0
                 else:
-                    trying = False
-                    wait = 0
+                    trying_parse = False
+                    wait_parse = 0
             captions.append(caption_date)
             self.data['captions'].extend(captions)
             count = post_num + 1
