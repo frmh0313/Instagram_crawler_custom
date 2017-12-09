@@ -134,8 +134,8 @@ class InstagramCrawler(object):
             # self.scrape_photo_links(number, is_hashtag=query.startswith("#")) # Do not download image
             # Scrape captions if specified
             if caption is True:
-                self.click_and_scrape_captions(number, query, dir_prefix)
-                # self.click_and_scrape_captions(num_of_posts)
+                # self.click_and_scrape_captions(number, query, dir_prefix)
+                self.click_and_scrape_captions(num_of_posts)
 
         elif crawl_type in ["followers", "following"]:
             # Need to login first before crawling followers/following
