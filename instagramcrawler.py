@@ -26,6 +26,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 import json
+import gc
 
 # HOST
 HOST = 'http://www.instagram.com'
@@ -268,6 +269,7 @@ class InstagramCrawler(object):
                     except NoSuchElementException as e:
                         print(e)
                         print("2:NoSuchElementException in {}. Trying again.\n".format(post_num+1))
+                        break
                     else:
                         trying_2 = False
                         wait_2 = 0
@@ -339,6 +341,7 @@ class InstagramCrawler(object):
                     with codecs.open(filepath, 'w', encoding='utf8') as fout:
                         json.dump(json_object, fout, ensure_ascii=False)
                 self.data['captions'] = []
+                gc.collect()
             if count == number:
                 filename = str(count) + '.txt'
                 filepath = os.path.join(dir_path, filename)
