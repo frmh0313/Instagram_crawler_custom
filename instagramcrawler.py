@@ -27,6 +27,9 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 import json
 import gc
+import tracemalloc
+import multiprocessing
+import resource
 
 # HOST
 HOST = 'http://www.instagram.com'
@@ -50,6 +53,26 @@ FOLLOWING_PATH = "//div[contains(text(), 'Following')]"
 # JAVASCRIPT COMMANDS
 SCROLL_UP = "window.scrollTo(0, 0);"
 SCROLL_DOWN = "window.scrollTo(0, document.body.scrollHeight);"
+
+# For memory issue
+
+
+def memory():
+    print('Memory usage:           : % 2.2f MB' % round(
+        resource.getrusage(resource.RUSAGE_SELF).ru_maxrss/1024.0, 1)
+    )
+
+
+def memoryhog():
+    print('For make os do release memory....')
+    n = (10**6)
+    l = []
+    for i in range(n):
+        a = 1000*'a'
+        b = 1000*'b'
+        l.append({'a': a, 'b': b})
+    memory()
+
 
 class url_change(object):
     """
@@ -214,6 +237,7 @@ class InstagramCrawler(object):
 
     def click_and_scrape_captions(self, number, query, dir_prefix):
         print("Scraping captions...")
+        time1 = tracemalloc.take_snapshot()
         num_captions_in_file = 1000
         increment_wait = 0.05
 
@@ -225,6 +249,10 @@ class InstagramCrawler(object):
             os.makedirs(dir_path)
 
         for post_num in range(number):
+            # memory()
+            # print('Memory usage:           : % 2.2f MB' % round(
+            #     resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024.0, 1)
+            #       )
             captions = []
             sys.stdout.write("\033[F")
             print("\n0:Scraping captions {} / {}\n".format(post_num+1,number))
@@ -340,8 +368,39 @@ class InstagramCrawler(object):
                     json_object = json.dumps(caption_result, ensure_ascii=False, indent=4)
                     with codecs.open(filepath, 'w', encoding='utf8') as fout:
                         json.dump(json_object, fout, ensure_ascii=False)
-                self.data['captions'] = []
+
+
+                self.data['captions'].clear()
                 gc.collect()
+                # print('Memory usage:           : % 2.2f MB' % round(
+                #     resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024.0, 1)
+                #       )
+                proc = multiprocessing.Process(target=memoryhog())
+                proc.start()
+                proc.join()
+                # print('Memory usage:           : % 2.2f MB' % round(
+                #     resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024.0, 1)
+                #       )
+                '''
+                # Trying to handle memory leak issue
+                time2 = tracemalloc.take_snapshot()
+
+                stats = time2.compare_to(time1, 'traceback')
+                print('========time2=========')
+                for stat in stats[:3]:
+                    print(stat)
+                self.data['captions'] = None
+                gc.collect()
+
+                time3 = tracemalloc.take_snapshot()
+                stats2 = time3.compare_to(time2, 'traceback')
+                print('=======time3==========')
+                top = stats2[0]
+                print('\n'.join(top.traceback.format()))
+                for stat in stats2[:3]:
+                    print(stat)
+                time.sleep(30)
+                '''
             if count == number:
                 filename = str(count) + '.txt'
                 filepath = os.path.join(dir_path, filename)
@@ -502,4 +561,5 @@ def main():
 
 
 if __name__ == "__main__":
+    tracemalloc.start(5)
     main()
