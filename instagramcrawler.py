@@ -370,14 +370,19 @@ class InstagramCrawler(object):
                         json.dump(json_object, fout, ensure_ascii=False)
 
 
-                self.data['captions'].clear()
+                self.data = None
                 gc.collect()
+                self.data = {}
+                self.data['captions'] = []
+
+                # self.data['captions'].clear()
+                # gc.collect()
                 # print('Memory usage:           : % 2.2f MB' % round(
                 #     resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024.0, 1)
                 #       )
-                proc = multiprocessing.Process(target=memoryhog())
-                proc.start()
-                proc.join()
+                # proc = multiprocessing.Process(target=memoryhog())
+                # proc.start()
+                # proc.join()
                 # print('Memory usage:           : % 2.2f MB' % round(
                 #     resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024.0, 1)
                 #       )
