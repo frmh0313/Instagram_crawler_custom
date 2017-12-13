@@ -27,8 +27,6 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 import json
 import gc
-import tracemalloc
-import multiprocessing
 import resource
 
 # HOST
@@ -235,7 +233,18 @@ class InstagramCrawler(object):
 
         self.data['photo_links'] = photo_links[begin:number + begin]
 
+# TODO: Ideas
+"""
+1. Using multiple webdrivers in a row.
+2. Using AWS? / or Using headless mode in NIMS server
+3. Not using selenium. Using requests instead?
+4. Writing shell script - executing this crawler for every 3000 comments. Save the url of last post, and keep going another process from the post
+- Saving the url in outer file and load this file in the next process?
+5. Writing what crawled to the output file directly, without saving in memory. 
+"""
     def click_and_scrape_captions(self, number, query, dir_prefix):
+        #import tracemalloc
+        #import multiprocessing
         print("Scraping captions...")
         time1 = tracemalloc.take_snapshot()
         num_captions_in_file = 1000
