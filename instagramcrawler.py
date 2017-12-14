@@ -184,7 +184,7 @@ class InstagramCrawler(object):
             # Scrape captions if specified
             if caption is True:
                 # self.click_and_scrape_captions(number, query, dir_prefix)
-                self.click_and_scrape_captions(num_of_posts, query, dir_prefix)
+                self.click_and_scrape_captions(number, query, dir_prefix)
 
         elif crawl_type in ["followers", "following"]:
             # Need to login first before crawling followers/following
@@ -295,7 +295,11 @@ class InstagramCrawler(object):
                 # Chrome
                 #self._driver.find_element_by_class_name('_ovg3g').click()
                 #self._driver.find_element_by_class_name('_mck9w _gvoze _f2mse')
-                self._driver.find_element_by_css_selector('._mck9w._gvoze._f2mse').click()
+                self._driver.find_element_by_xpath(
+                    FIREFOX_FIRST_POST_PATH
+                ).click()
+                self._driver.find_element_by_css_selector('._mck9w._gvoze._f2mse')
+                # self._driver.find_element_by_css_selector('._mck9w._gvoze._f2mse').click()
                 print('passed find_element_by_css_selector part')
                 # self._driver.find_element_by_xpath(
                 #     FIREFOX_FIRST_POST_PATH).click()
@@ -354,7 +358,7 @@ class InstagramCrawler(object):
                     date_title = time_element.get_attribute('title')
                     caption = time_element.find_element_by_xpath(
                         TIME_TO_CAPTION_PATH).text
-                    caption_date = { 'count': post_num+1, 'caption':caption, 'datetime': datetime, 'datetime_title':date_title }
+                    caption_with_date = { 'count': post_num+1, 'caption':caption, 'datetime': datetime, 'datetime_title':date_title }
                     # caption = {}
                     # caption['text'] = time_element.find_element_by_xpath(
                     #     TIME_TO_CAPTION_PATH).text
@@ -389,75 +393,49 @@ class InstagramCrawler(object):
                 else:
                     trying_parse = False
                     wait_parse = 0
-            captions.append(caption_date)
-            self.data['captions'].extend(captions)
-            count = post_num + 1
-            if count % num_captions_in_file == 0:
-                filename = str(count) +'.txt'
-                filepath = os.path.join(dir_path, filename)
-                print('file {}'.format(filename), 'writing')
 
-                caption_result = []
-                for caption in self.data['captions']:
-                    caption_result.append({'count': caption['count'],
-                                           'caption': caption['caption'],
-                                           'datetime': caption['datetime'],
-                                           'datetime_title': caption['datetime_title']})
-                    json_object = json.dumps(caption_result, ensure_ascii=False, indent=4)
-                    with codecs.open(filepath, 'w', encoding='utf8') as fout:
-                        json.dump(json_object, fout, ensure_ascii=False)
+            print("==================================")
+            print("{")
+            print("\t'count': "+str(caption_with_date['count']))
+            print("\t'datetime': "+str(caption_with_date['datetime']))
+            print("\t'datetime_title': "+str(caption_with_date['datetime_title']))
+            print("\t'caption': "+caption_with_date['caption'])
+            print("},")
+            print("==================================")
+            caption_with_date = None
+            gc.collect()
+            # captions.append(caption_with_date)
+            # self.data['captions'].extend(captions)
+            # count = post_num + 1
+            # if count % num_captions_in_file == 0:
+            #     filename = str(count) +'.txt'
+            #     filepath = os.path.join(dir_path, filename)
+            #     print('file {}'.format(filename), 'writing')
+            #
+            #     caption_result = []
+            #     for caption in self.data['captions']:
+            #         caption_result.append({'count': caption['count'],
+            #                                'caption': caption['caption'],
+            #                                'datetime': caption['datetime'],
+            #                                'datetime_title': caption['datetime_title']})
+            #         json_object = json.dumps(caption_result, ensure_ascii=False, indent=4)
+            #         with codecs.open(filepath, 'w', encoding='utf8') as fout:
+            #             json.dump(json_object, fout, ensure_ascii=False)
 
-
-                self.data = None
-                gc.collect()
-                self.data = {}
-                self.data['captions'] = []
-
-                # self.data['captions'].clear()
-                # gc.collect()
-                # print('Memory usage:           : % 2.2f MB' % round(
-                #     resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024.0, 1)
-                #       )
-                # proc = multiprocessing.Process(target=memoryhog())
-                # proc.start()
-                # proc.join()
-                # print('Memory usage:           : % 2.2f MB' % round(
-                #     resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024.0, 1)
-                #       )
-                '''
-                # Trying to handle memory leak issue
-                time2 = tracemalloc.take_snapshot()
-
-                stats = time2.compare_to(time1, 'traceback')
-                print('========time2=========')
-                for stat in stats[:3]:
-                    print(stat)
-                self.data['captions'] = None
-                gc.collect()
-
-                time3 = tracemalloc.take_snapshot()
-                stats2 = time3.compare_to(time2, 'traceback')
-                print('=======time3==========')
-                top = stats2[0]
-                print('\n'.join(top.traceback.format()))
-                for stat in stats2[:3]:
-                    print(stat)
-                time.sleep(30)
-                '''
-            if count == number:
-                filename = str(count) + '.txt'
-                filepath = os.path.join(dir_path, filename)
-                print('file {}'.format(filename), 'writing')
-
-                caption_result = []
-                for caption in self.data['captions']:
-                    caption_result.append({'count': caption['count'],
-                                           'caption': caption['caption'],
-                                           'datetime': caption['datetime'],
-                                           'datetime_title': caption['datetime_title']})
-                    json_object = json.dumps(caption_result, ensure_ascii=False, indent=4)
-                    with codecs.open(filepath, 'w', encoding='utf8') as fout:
-                        json.dump(json_object, fout, ensure_ascii=False)
+            # if count == number:
+            #     filename = str(count) + '.txt'
+            #     filepath = os.path.join(dir_path, filename)
+            #     print('file {}'.format(filename), 'writing')
+            #
+            #     caption_result = []
+            #     for caption in self.data['captions']:
+            #         caption_result.append({'count': caption['count'],
+            #                                'caption': caption['caption'],
+            #                                'datetime': caption['datetime'],
+            #                                'datetime_title': caption['datetime_title']})
+            #         json_object = json.dumps(caption_result, ensure_ascii=False, indent=4)
+            #         with codecs.open(filepath, 'w', encoding='utf8') as fout:
+            #             json.dump(json_object, fout, ensure_ascii=False)
             # captions.append(datetime)
             # captions.append(date_title)
 
