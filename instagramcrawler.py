@@ -52,25 +52,6 @@ FOLLOWING_PATH = "//div[contains(text(), 'Following')]"
 SCROLL_UP = "window.scrollTo(0, 0);"
 SCROLL_DOWN = "window.scrollTo(0, document.body.scrollHeight);"
 
-# For memory issue
-
-
-def memory():
-    print('Memory usage:           : % 2.2f MB' % round(
-        resource.getrusage(resource.RUSAGE_SELF).ru_maxrss/1024.0, 1)
-    )
-
-
-def memoryhog():
-    print('For make os do release memory....')
-    n = (10**6)
-    l = []
-    for i in range(n):
-        a = 1000*'a'
-        b = 1000*'b'
-        l.append({'a': a, 'b': b})
-    memory()
-
 
 class url_change(object):
     """
@@ -87,15 +68,62 @@ class InstagramCrawler(object):
         Crawler class
     """
     def __init__(self, headless=True, firefox_path=None):
+        from selenium.webdriver.chrome.options import Options
+
+        chrome_options = Options()
+        chrome_options.add_argument("user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_2) AppleWebKit/603.3.8 (KHTML, like Gecko) Chrome/63.0.3239.84 Safari/603.3.8")
+        chrome_options.add_argument("--headless")
+        chrome_options.binary_location = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+        driver = webdriver.Chrome(executable_path=os.path.abspath("chromedriver"),  chrome_options=chrome_options)
+        self._driver = driver
+        self._driver.implicitly_wait(10)
+        self.data = defaultdict(list)
+        """   
         if headless:
-            print("headless mode on")
-            self._driver = webdriver.PhantomJS()
+            print("init headless")
+            # print("headless mode on")
+            # self._driver = webdriver.PhantomJS()
+            '''
+            options = webdriver.FirefoxOptions()
+            options.add_argument('headless')
+            self._driver = webdriver.Firefox(options=options)
+            '''
+
+            # binary = FirefoxBinary(firefox_path)
+            # binary.add_command_line_options("-headless")
+            #
+            #
+            # options = webdriver.FirefoxOptions()
+            # options.set_headless(headless=True)
+            # driver = webdriver.FirefoxDriver(
+
+            # firefox_binary = FirefoxBinary(firefox_path)
+            # options = webdriver.FirefoxOptions()
+            # options.set_headless(headless=True)
+            # driver = webdriver.FirefoxDriver(options)
+            # self._driver = driver
+
+
+
+
         else:
+            print("init else")
+            '''
+            options = webdriver.FirefoxOptions()
+            options.add_argument('headless')
+            self._driver = webdriver.Firefox(options=options)
+            '''
+            firefox_binary = FirefoxBinary(firefox_path)
+            firefox_binary.add_command_line_options('--headless')
+            options = webdriver.FirefoxOptions()
+            options.set_headless(headless=True)
+            driver = webdriver.Firefox(firefox_binary, options)
+            self._driver = driver
             # credit to https://github.com/SeleniumHQ/selenium/issues/3884#issuecomment-296990844
             # for headless mode of firefox
-            binary = FirefoxBinary(firefox_path)
+            # binary = FirefoxBinary(firefox_path)
             # binary.add_command_line_options(['headless'])
-            self._driver = webdriver.Firefox(firefox_binary=binary)
+            # self._driver = webdriver.Firefox(firefox_binary=binary)
 
             # if __name__ == '__main__':
             #     self._driver = webdriver.Firefox(firefox_options=('-headless'))
@@ -104,10 +132,8 @@ class InstagramCrawler(object):
                 # self._driver = webdriver.Firefox(firefox_binary=binary)
             # self._driver = webdriver.Firefox(firefox_binary=binary, firefox_options='-headless')
             # self._driver = webdriver.Firefox(executable_path=firefox_path, firefox_options=['-headless'])
+        """
 
-
-        self._driver.implicitly_wait(10)
-        self.data = defaultdict(list)
 
     def login(self, authentication=None):
         """
@@ -233,20 +259,20 @@ class InstagramCrawler(object):
 
         self.data['photo_links'] = photo_links[begin:number + begin]
 
-# TODO: Ideas
-"""
-1. Using multiple webdrivers in a row.
-2. Using AWS? / or Using headless mode in NIMS server
-3. Not using selenium. Using requests instead?
-4. Writing shell script - executing this crawler for every 3000 comments. Save the url of last post, and keep going another process from the post
-- Saving the url in outer file and load this file in the next process?
-5. Writing what crawled to the output file directly, without saving in memory. 
-"""
+    # TODO: Ideas
+    """
+    1. Using multiple webdrivers in a row.
+    2. Using AWS? / or Using headless mode in NIMS server
+    3. Not using selenium. Using requests instead?
+    4. Writing shell script - executing this crawler for every 3000 comments. Save the url of last post, and keep going another process from the post
+    - Saving the url in outer file and load this file in the next process?
+    5. Writing what crawled to the output file directly, without saving in memory. 
+    """
     def click_and_scrape_captions(self, number, query, dir_prefix):
         #import tracemalloc
         #import multiprocessing
         print("Scraping captions...")
-        time1 = tracemalloc.take_snapshot()
+        # time1 = tracemalloc.take_snapshot()
         num_captions_in_file = 1000
         increment_wait = 0.05
 
@@ -268,8 +294,11 @@ class InstagramCrawler(object):
             if post_num == 0:  # Click on the first post
                 # Chrome
                 #self._driver.find_element_by_class_name('_ovg3g').click()
-                self._driver.find_element_by_xpath(
-                    FIREFOX_FIRST_POST_PATH).click()
+                #self._driver.find_element_by_class_name('_mck9w _gvoze _f2mse')
+                self._driver.find_element_by_css_selector('._mck9w._gvoze._f2mse').click()
+                print('passed find_element_by_css_selector part')
+                # self._driver.find_element_by_xpath(
+                #     FIREFOX_FIRST_POST_PATH).click()
 
                 if number != 1:  #
                     trying_1 = True
@@ -575,5 +604,5 @@ def main():
 
 
 if __name__ == "__main__":
-    tracemalloc.start(5)
+    # tracemalloc.start(5)
     main()
