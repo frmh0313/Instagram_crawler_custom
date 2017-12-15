@@ -25,6 +25,7 @@ from selenium.common.exceptions import NoSuchElementException, TimeoutException,
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
+import tracemalloc
 import json
 import gc
 import resource
@@ -70,6 +71,7 @@ class InstagramCrawler(object):
     def __init__(self, headless=True, firefox_path=None):
         from selenium.webdriver.chrome.options import Options
 
+        '''
         chrome_options = Options()
         chrome_options.add_argument("user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_2) AppleWebKit/603.3.8 (KHTML, like Gecko) Chrome/63.0.3239.84 Safari/603.3.8")
         chrome_options.add_argument("--headless")
@@ -78,7 +80,7 @@ class InstagramCrawler(object):
         self._driver = driver
         self._driver.implicitly_wait(10)
         self.data = defaultdict(list)
-        """   
+        '''
         if headless:
             print("init headless")
             # print("headless mode on")
@@ -114,10 +116,10 @@ class InstagramCrawler(object):
             self._driver = webdriver.Firefox(options=options)
             '''
             firefox_binary = FirefoxBinary(firefox_path)
-            firefox_binary.add_command_line_options('--headless')
+            # firefox_binary.add_command_line_options('--headless') # useless
             options = webdriver.FirefoxOptions()
-            options.set_headless(headless=True)
-            driver = webdriver.Firefox(firefox_binary, options)
+            # options.set_headless(headless=True) # WORKING OPTION!!
+            driver = webdriver.Firefox(firefox_binary=firefox_binary, firefox_options=options)
             self._driver = driver
             # credit to https://github.com/SeleniumHQ/selenium/issues/3884#issuecomment-296990844
             # for headless mode of firefox
@@ -132,7 +134,6 @@ class InstagramCrawler(object):
                 # self._driver = webdriver.Firefox(firefox_binary=binary)
             # self._driver = webdriver.Firefox(firefox_binary=binary, firefox_options='-headless')
             # self._driver = webdriver.Firefox(executable_path=firefox_path, firefox_options=['-headless'])
-        """
 
 
     def login(self, authentication=None):
@@ -172,13 +173,18 @@ class InstagramCrawler(object):
     def crawl(self, dir_prefix, query, crawl_type, number, caption, authentication):
         print("dir_prefix: {}, query: {}, crawl_type: {}, number: {}, caption: {}, authentication: {}"
               .format(dir_prefix, query, crawl_type, number, caption, authentication))
-
+        # import tracemalloc
+        # time1 = tracemalloc.take_snapshot()
         if crawl_type == "photos":
             # Browse target page
             self.browse_target_page(query)
+            print("Browsed")
             # Scroll down until target number photos is reached
-            #num_of_posts = self.scroll_to_num_of_posts(number)
-            num_of_posts = self.num_of_posts()
+            # num_of_posts = self.num_of_posts()
+            # num_of_posts = self._driver.find_elements_by_class_name('_fd86t')
+            # num_of_posts = self._driver.find_element_by_xpath(FIREFOX_FIRST_POST_PATH)
+            # print(num_of_posts)
+            self.scroll_to_num_of_posts(number=50, num_of_posts=137428)
             # Scrape photo links
             # self.scrape_photo_links(number, is_hashtag=query.startswith("#")) # Do not download image
             # Scrape captions if specified
@@ -186,28 +192,11 @@ class InstagramCrawler(object):
                 # self.click_and_scrape_captions(number, query, dir_prefix)
                 self.click_and_scrape_captions(number, query, dir_prefix)
 
-        elif crawl_type in ["followers", "following"]:
-            # Need to login first before crawling followers/following
-            print("You will need to login to crawl {}".format(crawl_type))
-            self.login(authentication)
-
-            # Then browse target page
-            assert not query.startswith(
-                '#'), "Hashtag does not have followers/following!"
-            self.browse_target_page(query)
-            # Scrape captions
-            self.scrape_followers_or_following(crawl_type, query, number)
-        else:
-            print("Unknown crawl type: {}".format(crawl_type))
-            self.quit()
-            return
-        # Save to directory
-        print("Saving...")
-        # self.download_and_save(dir_prefix, query, crawl_type)
-
         # Quit driver
-        print("Quitting driver...")
-        self.quit()
+        print("Scrolling complete")
+        # print("Quitting driver...")
+        # self.quit()
+
 
     def browse_target_page(self, query):
         # Browse Hashtags
@@ -219,6 +208,30 @@ class InstagramCrawler(object):
         target_url = urljoin(HOST, relative_url)
 
         self._driver.get(target_url)
+
+    # def scroll_to_num_of_posts(self, number):
+    #     num_info = re.search(r'\], "count": \d+',
+    #                          self._driver.page_source).group()
+    #     num_of_posts = int(re.findall(r'\d+', num_info)[0])
+    #
+    #     print("posts: {}, number: {}".format(num_of_posts, number))
+    #     number = number if number < num_of_posts else num_of_posts
+    #
+    #     # scroll page until reached
+    #     loadmore = WebDriverWait(self._driver, 10).until(
+    #         EC.presence_of_element_located(
+    #             (By.CSS_SELECTOR, CSS_LOAD_MORE))
+    #     )
+    #     loadmore.click()
+    #
+    #     num_to_scroll = int((number - 12) / 12) + 1
+    #     for i in range(num_to_scroll):
+    #         print("Scrolls: {}/{}".format(i, num_to_scroll))
+    #         self._driver.execute_script(SCROLL_DOWN)
+    #         time.sleep(0.2)
+    #         self._driver.execute_script(SCROLL_UP)
+    #         time.sleep(0.2)
+    #     return num_of_posts
 
     def num_of_posts(self):
         num_info = re.search(r'\], "count": \d+',
@@ -284,10 +297,6 @@ class InstagramCrawler(object):
             os.makedirs(dir_path)
 
         for post_num in range(number):
-            # memory()
-            # print('Memory usage:           : % 2.2f MB' % round(
-            #     resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024.0, 1)
-            #       )
             captions = []
             sys.stdout.write("\033[F")
             print("\n0:Scraping captions {} / {}\n".format(post_num+1,number))
@@ -298,9 +307,8 @@ class InstagramCrawler(object):
                 self._driver.find_element_by_xpath(
                     FIREFOX_FIRST_POST_PATH
                 ).click()
-                self._driver.find_element_by_css_selector('._mck9w._gvoze._f2mse')
+                # self._driver.find_element_by_css_selector('._mck9w._gvoze._f2mse')
                 # self._driver.find_element_by_css_selector('._mck9w._gvoze._f2mse').click()
-                print('passed find_element_by_css_selector part')
                 # self._driver.find_element_by_xpath(
                 #     FIREFOX_FIRST_POST_PATH).click()
 
@@ -354,11 +362,21 @@ class InstagramCrawler(object):
                     time_element = WebDriverWait(self._driver, wait_parse).until(
                         EC.presence_of_element_located((By.TAG_NAME, "time"))
                     )
-                    datetime = time_element.get_attribute('datetime')
-                    date_title = time_element.get_attribute('title')
-                    caption = time_element.find_element_by_xpath(
-                        TIME_TO_CAPTION_PATH).text
-                    caption_with_date = { 'count': post_num+1, 'caption':caption, 'datetime': datetime, 'datetime_title':date_title }
+                    '''
+                    print("parsed!!")
+                    print("{")
+                    print("\t'count': "+str(post_num+1))
+                    print("\t'datetime': "+str(time_element.get_attribute('datetime')))
+                    print("\t'datetime_title': "+str(time_element.get_attribute('datetime_title')))
+                    print("\t'caption': "+str(time_element.find_element_by_xpath(TIME_TO_CAPTION_PATH).text))
+                    print("},")
+                    '''
+                    
+                    # datetime = time_element.get_attribute('datetime')
+                    # date_title = time_element.get_attribute('title')
+                    # caption = time_element.find_element_by_xpath(
+                    #     TIME_TO_CAPTION_PATH).text
+                    # caption_with_date = { 'count': post_num+1, 'caption':caption, 'datetime': datetime, 'datetime_title':date_title }
                     # caption = {}
                     # caption['text'] = time_element.find_element_by_xpath(
                     #     TIME_TO_CAPTION_PATH).text
@@ -394,16 +412,20 @@ class InstagramCrawler(object):
                     trying_parse = False
                     wait_parse = 0
 
-            print("==================================")
-            print("{")
-            print("\t'count': "+str(caption_with_date['count']))
-            print("\t'datetime': "+str(caption_with_date['datetime']))
-            print("\t'datetime_title': "+str(caption_with_date['datetime_title']))
-            print("\t'caption': "+caption_with_date['caption'])
-            print("},")
-            print("==================================")
-            caption_with_date = None
+            # print("==================================")
+            # print("{")
+            # print("\t'count': "+str(caption_with_date['count']))
+            # print("\t'datetime': "+str(caption_with_date['datetime']))
+            # print("\t'datetime_title': "+str(caption_with_date['datetime_title']))
+            # print("\t'caption': "+caption_with_date['caption'])
+            # print("},")
+            # print("==================================")
+            # caption_with_date = None
             gc.collect()
+        # time2 = tracemalloc.take_snapshot()
+        # stats = time2.compare_to(time1, 'lineno')
+        # for stat in stats[:10]:
+        #     print(stat)
             # captions.append(caption_with_date)
             # self.data['captions'].extend(captions)
             # count = post_num + 1
@@ -582,5 +604,11 @@ def main():
 
 
 if __name__ == "__main__":
-    # tracemalloc.start(5)
+    # import tracemalloc
+    # tracemalloc.start(10)
+    # time3 = tracemalloc.take_snapshot()
     main()
+    # time4 = tracemalloc.take_snapshot()
+    # stats = time4.compare_to(time3, 'lineno')
+    # for stat in stats[:10]:
+    #     print(stat)
