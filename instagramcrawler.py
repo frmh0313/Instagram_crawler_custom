@@ -68,72 +68,14 @@ class InstagramCrawler(object):
         Crawler class
     """
     def __init__(self, headless=True, firefox_path=None):
-        from selenium.webdriver.chrome.options import Options
+        firefox_binary = FirefoxBinary(firefox_path)
+        options = webdriver.FirefoxOptions()
 
-        chrome_options = Options()
-        chrome_options.add_argument("user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_2) AppleWebKit/603.3.8 (KHTML, like Gecko) Chrome/63.0.3239.84 Safari/603.3.8")
-        chrome_options.add_argument("--headless")
-        chrome_options.binary_location = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
-        driver = webdriver.Chrome(executable_path=os.path.abspath("chromedriver"),  chrome_options=chrome_options)
-        self._driver = driver
-        self._driver.implicitly_wait(10)
-        self.data = defaultdict(list)
-        """   
         if headless:
-            print("init headless")
-            # print("headless mode on")
-            # self._driver = webdriver.PhantomJS()
-            '''
-            options = webdriver.FirefoxOptions()
-            options.add_argument('headless')
-            self._driver = webdriver.Firefox(options=options)
-            '''
-
-            # binary = FirefoxBinary(firefox_path)
-            # binary.add_command_line_options("-headless")
-            #
-            #
-            # options = webdriver.FirefoxOptions()
-            # options.set_headless(headless=True)
-            # driver = webdriver.FirefoxDriver(
-
-            # firefox_binary = FirefoxBinary(firefox_path)
-            # options = webdriver.FirefoxOptions()
-            # options.set_headless(headless=True)
-            # driver = webdriver.FirefoxDriver(options)
-            # self._driver = driver
-
-
-
-
-        else:
-            print("init else")
-            '''
-            options = webdriver.FirefoxOptions()
-            options.add_argument('headless')
-            self._driver = webdriver.Firefox(options=options)
-            '''
-            firefox_binary = FirefoxBinary(firefox_path)
-            firefox_binary.add_command_line_options('--headless')
-            options = webdriver.FirefoxOptions()
             options.set_headless(headless=True)
-            driver = webdriver.Firefox(firefox_binary, options)
-            self._driver = driver
-            # credit to https://github.com/SeleniumHQ/selenium/issues/3884#issuecomment-296990844
-            # for headless mode of firefox
-            # binary = FirefoxBinary(firefox_path)
-            # binary.add_command_line_options(['headless'])
-            # self._driver = webdriver.Firefox(firefox_binary=binary)
-
-            # if __name__ == '__main__':
-            #     self._driver = webdriver.Firefox(firefox_options=('-headless'))
-                # binary = FirefoxBinary(firefox_path)
-                # binary = binary.add_command_line_options(['-headless'])
-                # self._driver = webdriver.Firefox(firefox_binary=binary)
-            # self._driver = webdriver.Firefox(firefox_binary=binary, firefox_options='-headless')
-            # self._driver = webdriver.Firefox(executable_path=firefox_path, firefox_options=['-headless'])
-        """
-
+        driver = webdriver.Firefox(firefox_binary=firefox_binary, firefox_options=options)
+        self._driver = driver
+        driver.implicitly_wait(10)
 
     def login(self, authentication=None):
         """
@@ -176,15 +118,12 @@ class InstagramCrawler(object):
         if crawl_type == "photos":
             # Browse target page
             self.browse_target_page(query)
+
             # Scroll down until target number photos is reached
-            #num_of_posts = self.scroll_to_num_of_posts(number)
-            num_of_posts = self.num_of_posts()
-            # Scrape photo links
-            # self.scrape_photo_links(number, is_hashtag=query.startswith("#")) # Do not download image
-            # Scrape captions if specified
-            if caption is True:
-                # self.click_and_scrape_captions(number, query, dir_prefix)
-                self.click_and_scrape_captions(number, query, dir_prefix)
+            # num_of_posts = self.scroll_to_num_of_posts(number)
+
+            # self.click_and_scrape_captions(number, query, dir_prefix)
+            self.click_and_scrape_captions(number, query, dir_prefix)
 
         elif crawl_type in ["followers", "following"]:
             # Need to login first before crawling followers/following
@@ -201,9 +140,6 @@ class InstagramCrawler(object):
             print("Unknown crawl type: {}".format(crawl_type))
             self.quit()
             return
-        # Save to directory
-        print("Saving...")
-        # self.download_and_save(dir_prefix, query, crawl_type)
 
         # Quit driver
         print("Quitting driver...")
@@ -221,12 +157,10 @@ class InstagramCrawler(object):
         self._driver.get(target_url)
 
     def num_of_posts(self):
-        num_info = re.search(r'\], "count": \d+',
-                             self._driver.page_source).group()
-        num_of_posts = int(re.findall(r'\d+', num_info)[0])
-        return num_of_posts
+        return self._driver.find_element_by_xpath("//span[@class='_fd86t']")
 
-    def scroll_to_num_of_posts(self, number, num_of_posts):
+    def scroll_to_num_of_posts(self, number):
+        num_of_posts = int((self._driver.find_element_by_xpath("//span[@class='_fd86t']").text).replace(',', ''))
         print("posts: {}, number: {}".format(num_of_posts, number))
         number = number if number < num_of_posts else num_of_posts
 
@@ -292,17 +226,11 @@ class InstagramCrawler(object):
             sys.stdout.write("\033[F")
             print("\n0:Scraping captions {} / {}\n".format(post_num+1,number))
             if post_num == 0:  # Click on the first post
-                # Chrome
-                #self._driver.find_element_by_class_name('_ovg3g').click()
-                #self._driver.find_element_by_class_name('_mck9w _gvoze _f2mse')
                 self._driver.find_element_by_xpath(
                     FIREFOX_FIRST_POST_PATH
                 ).click()
-                self._driver.find_element_by_css_selector('._mck9w._gvoze._f2mse')
-                # self._driver.find_element_by_css_selector('._mck9w._gvoze._f2mse').click()
-                print('passed find_element_by_css_selector part')
-                # self._driver.find_element_by_xpath(
-                #     FIREFOX_FIRST_POST_PATH).click()
+                self._driver.find_element_by_xpath(
+                    FIREFOX_FIRST_POST_PATH).click()
 
                 if number != 1:  #
                     trying_1 = True
@@ -315,9 +243,11 @@ class InstagramCrawler(object):
                                 )
                             )
                         except TimeoutException:
-                            print("1:Timeout in post_num 0. Trying again.\n")
+                            print("1:Timeout. No right arrow")
                             wait_1 += increment_wait
                             continue
+                        except NoSuchElementException:
+                            print("No right arrow")
                         else:
                             trying_1 = False
                             wait_1 = 0
@@ -438,117 +368,6 @@ class InstagramCrawler(object):
             #             json.dump(json_object, fout, ensure_ascii=False)
             # captions.append(datetime)
             # captions.append(date_title)
-
-    def scrape_followers_or_following(self, crawl_type, query, number):
-        print("Scraping {}...".format(crawl_type))
-        if crawl_type == "followers":
-            FOLLOW_ELE = CSS_FOLLOWERS
-            FOLLOW_PATH = FOLLOWER_PATH
-        elif crawl_type == "following":
-            FOLLOW_ELE = CSS_FOLLOWING
-            FOLLOW_PATH = FOLLOWING_PATH
-
-        # Locate follow list
-        follow_ele = WebDriverWait(self._driver, 5).until(
-            EC.presence_of_element_located(
-                (By.CSS_SELECTOR, FOLLOW_ELE.format(query)))
-        )
-
-        # when no number defined, check the total items
-        if number is 0:
-            number = int(filter(str.isdigit, str(follow_ele.text)))
-            print("getting all " + str(number) + " items")
-
-        # open desired list
-        follow_ele.click()
-
-        title_ele = WebDriverWait(self._driver, 5).until(
-            EC.presence_of_element_located(
-                (By.XPATH, FOLLOW_PATH))
-        )
-        List = title_ele.find_element_by_xpath(
-            '..').find_element_by_tag_name('ul')
-        List.click()
-
-        # Loop through list till target number is reached
-        num_of_shown_follow = len(List.find_elements_by_xpath('*'))
-        while len(List.find_elements_by_xpath('*')) < number:
-            element = List.find_elements_by_xpath('*')[-1]
-            # Work around for now => should use selenium's Expected Conditions!
-            try:
-                element.send_keys(Keys.PAGE_DOWN)
-            except Exception as e:
-                time.sleep(0.1)
-
-        follow_items = []
-        for ele in List.find_elements_by_xpath('*')[:number]:
-            follow_items.append(ele.text.split('\n')[0])
-
-        self.data[crawl_type] = follow_items
-
-    def download_and_save(self, dir_prefix, query, crawl_type):
-        # Check if is hashtag
-        dir_name = query.lstrip(
-            '##') + '.hashtag' if query.startswith('#') else query
-
-        dir_path = os.path.join(dir_prefix, dir_name)
-        if not os.path.exists(dir_path):
-            os.makedirs(dir_path)
-
-        print("Saving to directory: {}".format(dir_path))
-
-        # Save Photos
-        for idx, photo_link in enumerate(self.data['photo_links'], 0):
-            sys.stdout.write("\033[F")
-            print("Downloading {} images to ".format(idx + 1))
-            # Filename
-            _, ext = os.path.splitext(photo_link)
-            filename = str(idx) + ext
-            filepath = os.path.join(dir_path, filename)
-            # Send image request
-            urlretrieve(photo_link, filepath)
-
-        # Save Captions
-        caption_result = []
-        for idx, caption in enumerate(self.data['captions'], 0):
-
-            filename = 'caption_and_date.txt'
-            filepath = os.path.join(dir_path, filename)
-
-            # with codecs.open(filepath, 'w', encoding='utf-8') as fout:
-            #     fout.write(caption + '\n')file_start
-
-            # caption_result['comments'] = {'caption':caption['caption'], 'datetime':caption['datetime'], 'datetime_title':caption['datetime_title']}
-
-
-            caption_result.append({'count': caption['count'],
-                                   'caption':caption['caption'],
-                                   'datetime':caption['datetime'],
-                                   'datetime_title':caption['datetime_title']})
-            json_object = json.dumps(caption_result, ensure_ascii=False, indent=4)
-
-            with codecs.open(filepath, 'w', encoding='utf8') as fout:
-                # fout.write(json_object)
-                json.dump(json_object, fout, ensure_ascii=False)
-
-            # with codecs.open(filepath, 'a', encoding='utf8') as fout:
-            #     fout.write(caption['caption']+'\n')
-            #     fout.write('\t\t\n\t\t')
-            #     fout.write(caption['datetime'])
-            #     fout.write('\t\t\n\t\t')
-            #     fout.write(caption['datetime_title'])
-            #     fout.write('\n')
-        #
-
-
-        # Save followers/following
-        filename = crawl_type + '.txt'
-        filepath = os.path.join(dir_path, filename)
-        if len(self.data[crawl_type]):
-            with codecs.open(filepath, 'w', encoding='utf-8') as fout:
-                for fol in self.data[crawl_type]:
-                    fout.write(fol + '\n')
-
 
 def main():
     #   Arguments  #
