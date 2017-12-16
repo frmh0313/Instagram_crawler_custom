@@ -121,10 +121,10 @@ class InstagramCrawler(object):
             self.browse_target_page(query)
 
             # Scroll down until target number photos is reached
-            # num_of_posts = self.scroll_to_num_of_posts(number)
+            num_of_posts = self.num_of_posts()
 
             # self.click_and_scrape_captions(number, query, dir_prefix)
-            self.click_and_scrape_captions(number, query, dir_prefix)
+            self.click_and_scrape_captions(num_of_posts, query, dir_prefix)
 
         elif crawl_type in ["followers", "following"]:
             # Need to login first before crawling followers/following
