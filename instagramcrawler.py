@@ -73,6 +73,7 @@ class InstagramCrawler(object):
 
         if headless:
             options.set_headless(headless=True)
+            options.set_preference("general.useragent.override", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.84 Safari/537.36")
         driver = webdriver.Firefox(firefox_binary=firefox_binary, firefox_options=options)
         self._driver = driver
         driver.implicitly_wait(10)
@@ -324,16 +325,16 @@ class InstagramCrawler(object):
                     trying_parse = False
                     wait_parse = 0
 
-            print("==================================")
-            print("{")
-            print("\t'count': "+str(caption_with_date['count']))
-            print("\t'datetime': "+str(caption_with_date['datetime']))
-            print("\t'datetime_title': "+str(caption_with_date['datetime_title']))
-            print("\t'caption': "+caption_with_date['caption'])
-            print("},")
-            print("==================================")
-            caption_with_date = None
-            gc.collect()
+
+                count = post_num + 1
+                filenumber = int(count / 1000) * 1000
+                filename = str(filenumber) + '.txt'
+                filepath = os.path.join(dir_path, filename)
+                with codecs.open(filepath, 'a', encoding='utf8') as fout:
+                    json_object = json.dumps(caption_with_date, ensure_ascii=False, indent=4)
+                    json.dump(json_object, fout, ensure_ascii=False)
+
+
             # captions.append(caption_with_date)
             # self.data['captions'].extend(captions)
             # count = post_num + 1
@@ -351,7 +352,7 @@ class InstagramCrawler(object):
             #         json_object = json.dumps(caption_result, ensure_ascii=False, indent=4)
             #         with codecs.open(filepath, 'w', encoding='utf8') as fout:
             #             json.dump(json_object, fout, ensure_ascii=False)
-
+            #
             # if count == number:
             #     filename = str(count) + '.txt'
             #     filepath = os.path.join(dir_path, filename)
