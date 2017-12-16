@@ -121,7 +121,7 @@ class InstagramCrawler(object):
             self.browse_target_page(query)
 
             # Scroll down until target number photos is reached
-            num_of_posts = self.num_of_posts()
+            num_of_posts = int(str(self._driver.find_element_by_xpath("//span[@class='_fd86t']").text).replace(',', ''))
 
             # self.click_and_scrape_captions(number, query, dir_prefix)
             self.click_and_scrape_captions(num_of_posts, query, dir_prefix)
@@ -156,9 +156,6 @@ class InstagramCrawler(object):
         target_url = urljoin(HOST, relative_url)
 
         self._driver.get(target_url)
-
-    def num_of_posts(self):
-        return self._driver.find_element_by_xpath("//span[@class='_fd86t']")
 
     def scroll_to_num_of_posts(self, number):
         num_of_posts = int((self._driver.find_element_by_xpath("//span[@class='_fd86t']").text).replace(',', ''))
