@@ -74,8 +74,12 @@ class InstagramCrawler(object):
         if headless:
             options.set_headless(headless=True)
             options.set_preference("general.useragent.override", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.84 Safari/537.36")
+            options.add_argument("lang=ko_KR")
+            options.add_argument('window-size=1920x1080)')
         driver = webdriver.Firefox(firefox_binary=firefox_binary, firefox_options=options)
         self._driver = driver
+        self._driver.execute_script("Object.defineProperty(navigator, 'plugins', {get: function() { return [1, 2, 3, 4, 5];},});")
+        self._driver.execute_script("Object.defineProperty(navigator, 'languages', {get: function() { return ['ko-KR', 'ko']}})")
         driver.implicitly_wait(10)
 
     def login(self, authentication=None):
